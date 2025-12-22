@@ -29,7 +29,7 @@ const Home = () => {
 
       <p style={{
         fontSize: '1.4rem',
-        color: 'rgba(26,32,44,0.9)',
+        color: 'rgba(26,31,22,0.9)',
         maxWidth: '500px',
         marginBottom: '4rem',
         background: 'rgba(255,255,255,0.6)',
