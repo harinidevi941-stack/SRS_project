@@ -1,0 +1,17 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Pink gradient background */
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 25%, #fecfef 50%, #ffecd2 75%, #fcb69f 100%);
+  min-height: 100vh;
+  color: #1a202c;
+  line-height: 1.6;
+}
