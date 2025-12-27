@@ -1,0 +1,57 @@
+/* src/components/Login.css */
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.login-card {
+  background: white;
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-card h2 {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.login-card button {
+  width: 100%;
+  padding: 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.error {
+  color: red;
+  background: #fee;
+  padding: 0.8rem;
+  border-radius: 5px;
+  margin: 1rem 0;
+}
+
+.demo-info {
+  margin-top: 2rem;
+  text-align: center;
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 10px;
+}

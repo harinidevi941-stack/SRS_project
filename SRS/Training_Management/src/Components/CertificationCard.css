@@ -1,0 +1,187 @@
+.cert-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.cert-page h2 {
+  color: white;
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.cert-approval, .cert-approved-hr, .cert-employee {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.cert-approval h3, .cert-approved-hr h3, .cert-employee h3 {
+  color: #333;
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+}
+
+.pending-list, .approved-list {
+  list-style: none;
+  padding: 0;
+}
+
+.pending-item {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.pending-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.pending-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.approve-btn, .deny-btn {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+.approve-btn {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  color: white;
+  box-shadow: 0 5px 15px rgba(34,197,94,0.4);
+}
+
+.approve-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(34,197,94,0.6);
+}
+
+.deny-btn {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  color: white;
+  box-shadow: 0 5px 15px rgba(239,68,68,0.4);
+}
+
+.deny-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(239,68,68,0.6);
+}
+
+.decision-tag {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.decision-tag.approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.decision-tag.denied {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.cert-card {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border-radius: 24px;
+  padding: 2.5rem;
+  text-align: center;
+  box-shadow: 
+    20px 20px 40px #d1d1d1,
+    -20px -20px 40px #ffffff;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  border: 1px solid rgba(255,255,255,0.5);
+}
+
+.cert-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+}
+
+.cert-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 
+    30px 30px 60px #c9c9c9,
+    -30px -30px 60px #ffffff;
+}
+
+.cert-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+  margin: 1rem 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cert-program {
+  font-size: 1.3rem;
+  color: #666;
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+.cert-footer {
+  margin-top: 1.5rem;
+  color: #22c55e;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.download-btn {
+  margin-top: 1.5rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(59,130,246,0.4);
+}
+
+.download-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(59,130,246,0.6);
+}
