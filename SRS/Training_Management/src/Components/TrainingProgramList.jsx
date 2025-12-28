@@ -3,49 +3,42 @@ import { useCourseContext } from "../Context/CourseContext";
 import { useAuth } from "../Context/AuthContext";
 
 function TrainingProgramList() {
-  const { progress, updateProgress } = useCourseContext();
+  const { programs, enrollEmployee, getEmployeeEnrollments } = useCourseContext();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
+  const myEnrollments = getEmployeeEnrollments(user?.email || '');
+
   const getEnrollmentStatus = (programId) => {
-    const userProgress = progress.find(p => 
-      p.programId === programId && p.employeeEmail === user?.email?.toLowerCase()
-    );
-    return userProgress ? userProgress.status : "Not Enrolled";
+    const enrollment = myEnrollments.find(e => e.courseId === programId);
+    return enrollment ? enrollment.status : "Not Enrolled";
   };
 
   const getEnrollmentCount = (programId) => {
-    return progress.filter(p => p.programId === programId).length;
+    // This would need to be implemented to count all enrollments for a program
+    return myEnrollments.filter(e => e.courseId === programId).length;
   };
 
   const handleEnroll = (programId, programName) => {
     if (user?.role === 'employee') {
-      const newRecord = {
-        id: Date.now().toString(),
-        employeeEmail: user.email.toLowerCase(),
-        employeeName: user.email.split('@')[0],
-        programId: programId,
-        programName: programName,
-        status: 'In Progress',
-        score: '',
-        completion: '0'
-      };
-      updateProgress(newRecord);
+      const isAlreadyEnrolled = myEnrollments.some(e => e.courseId === programId);
+      if (isAlreadyEnrolled) {
+        alert('You are already enrolled in this program!');
+        return;
+      }
+      
+      enrollEmployee({
+        employeeEmail: user.email,
+        programId: programId
+      });
       alert(`Successfully enrolled in "${programName}"!`);
     } else {
       alert("Only employees can enroll in programs.");
     }
   };
 
-  const extendedPrograms = [
-    { id: '1', name: 'React Fundamentals', category: 'technical', duration: '4 weeks', level: 'Beginner', description: 'Learn the basics of React development' },
-    { id: '2', name: 'Advanced JavaScript', category: 'technical', duration: '6 weeks', level: 'Advanced', description: 'Master advanced JavaScript concepts' },
-    { id: '3', name: 'Node.js Backend', category: 'technical', duration: '8 weeks', level: 'Intermediate', description: 'Build scalable backend applications' },
-    { id: '4', name: 'Leadership Skills', category: 'leadership', duration: '3 weeks', level: 'All Levels', description: 'Develop essential leadership qualities' },
-    { id: '5', name: 'Communication Excellence', category: 'soft-skills', duration: '2 weeks', level: 'All Levels', description: 'Improve workplace communication' },
-    { id: '6', name: 'Data Privacy & Security', category: 'compliance', duration: '1 week', level: 'All Levels', description: 'Understanding data protection regulations' }
-  ];
+  const extendedPrograms = programs;
 
   const filteredPrograms = extendedPrograms.filter(program => {
     const matchesSearch = program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -210,24 +203,25 @@ function TrainingProgramList() {
 
                 <button
                   onClick={() => handleEnroll(program.id, program.name)}
-                  disabled={enrollmentStatus !== 'Not Enrolled'}
+                  disabled={enrollmentStatus !== 'Not Enrolled' || user?.role !== 'employee'}
                   style={{
                     width: '100%',
                     padding: '1rem',
-                    background: enrollmentStatus === 'Not Enrolled' 
+                    background: (enrollmentStatus === 'Not Enrolled' && user?.role === 'employee') 
                       ? 'linear-gradient(135deg, #667eea, #764ba2)' 
                       : '#e5e7eb',
-                    color: enrollmentStatus === 'Not Enrolled' ? 'white' : '#9ca3af',
+                    color: (enrollmentStatus === 'Not Enrolled' && user?.role === 'employee') ? 'white' : '#9ca3af',
                     border: 'none',
                     borderRadius: '10px',
                     fontWeight: 'bold',
                     fontSize: '1rem',
-                    cursor: enrollmentStatus === 'Not Enrolled' ? 'pointer' : 'not-allowed'
+                    cursor: (enrollmentStatus === 'Not Enrolled' && user?.role === 'employee') ? 'pointer' : 'not-allowed'
                   }}
                 >
-                  {enrollmentStatus === 'Not Enrolled' ? '🚀 Request Enrollment' :
-                   enrollmentStatus === 'In Progress' ? '📚 Continue Learning' :
-                   enrollmentStatus === 'Completed' ? '🏆 Completed' : 'View Details'}
+                  {user?.role !== 'employee' ? '🚫 Enrollment Restricted' :
+                   enrollmentStatus === 'Not Enrolled' ? '🚀 Request Enrollment' :
+                   enrollmentStatus === 'in-progress' ? '📚 Continue Learning' :
+                   enrollmentStatus === 'completed' ? '🏆 Completed' : 'View Details'}
                 </button>
               </div>
             );

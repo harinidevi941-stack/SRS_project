@@ -3,66 +3,66 @@ import { useCourseContext } from "../Context/CourseContext";
 import { useAuth } from "../Context/AuthContext";
 
 function Reports() {
-  const { programs, progress } = useCourseContext();
+  const { programs, getAllEnrollments } = useCourseContext();
   const { user } = useAuth();
   const [selectedReport, setSelectedReport] = useState("overview");
-  const [dateRange, setDateRange] = useState("all");
+
+  const enrollments = getAllEnrollments();
+  const completedEnrollments = enrollments.filter(e => e.status === 'completed');
+  const inProgressEnrollments = enrollments.filter(e => e.status === 'in-progress');
 
   const generateOverviewReport = () => {
-    const totalEmployees = [...new Set(progress.map(p => p.employeeEmail))].length;
-    const totalEnrollments = progress.length;
-    const completedTrainings = progress.filter(p => p.status === 'Completed').length;
-    const inProgressTrainings = progress.filter(p => p.status === 'In Progress').length;
-    const completionRate = totalEnrollments > 0 ? Math.round((completedTrainings / totalEnrollments) * 100) : 0;
+    const totalEmployees = [...new Set(enrollments.map(e => e.employeeId))].length;
+    const completionRate = enrollments.length > 0 ? Math.round((completedEnrollments.length / enrollments.length) * 100) : 0;
+    const avgProgress = enrollments.length > 0 ? Math.round(enrollments.reduce((acc, e) => acc + e.progressPercent, 0) / enrollments.length) : 0;
     
     return {
       totalEmployees,
-      totalEnrollments,
-      completedTrainings,
-      inProgressTrainings,
-      completionRate
+      totalEnrollments: enrollments.length,
+      completedTrainings: completedEnrollments.length,
+      inProgressTrainings: inProgressEnrollments.length,
+      completionRate,
+      avgProgress
     };
   };
 
   const generateProgramReport = () => {
     return programs.map(program => {
-      const programProgress = progress.filter(p => p.programId === program.id);
-      const completed = programProgress.filter(p => p.status === 'Completed').length;
-      const inProgress = programProgress.filter(p => p.status === 'In Progress').length;
-      const completionRate = programProgress.length > 0 ? Math.round((completed / programProgress.length) * 100) : 0;
-      const avgScore = programProgress.filter(p => p.score && p.score !== '').length > 0 
-        ? Math.round(programProgress.filter(p => p.score && p.score !== '').reduce((acc, p) => acc + parseInt(p.score), 0) / programProgress.filter(p => p.score && p.score !== '').length)
-        : 0;
+      const programEnrollments = enrollments.filter(e => e.courseId === program.id);
+      const completed = programEnrollments.filter(e => e.status === 'completed').length;
+      const inProgress = programEnrollments.filter(e => e.status === 'in-progress').length;
+      const completionRate = programEnrollments.length > 0 ? Math.round((completed / programEnrollments.length) * 100) : 0;
+      const avgProgress = programEnrollments.length > 0 ? Math.round(programEnrollments.reduce((acc, e) => acc + e.progressPercent, 0) / programEnrollments.length) : 0;
+      const feedbackCount = programEnrollments.filter(e => e.feedback).length;
+      const avgRating = feedbackCount > 0 ? (programEnrollments.filter(e => e.feedback).reduce((acc, e) => acc + e.feedback.rating, 0) / feedbackCount).toFixed(1) : 'N/A';
       
       return {
         ...program,
-        enrollments: programProgress.length,
+        enrollments: programEnrollments.length,
         completed,
         inProgress,
         completionRate,
-        avgScore
+        avgProgress,
+        avgRating,
+        feedbackCount
       };
     });
   };
 
   const generateEmployeeReport = () => {
-    const employees = [...new Set(progress.map(p => p.employeeEmail))];
-    return employees.map(email => {
-      const employeeProgress = progress.filter(p => p.employeeEmail === email);
-      const employeeName = employeeProgress[0]?.employeeName || email.split('@')[0];
-      const completed = employeeProgress.filter(p => p.status === 'Completed').length;
-      const inProgress = employeeProgress.filter(p => p.status === 'In Progress').length;
-      const avgScore = employeeProgress.filter(p => p.score && p.score !== '').length > 0 
-        ? Math.round(employeeProgress.filter(p => p.score && p.score !== '').reduce((acc, p) => acc + parseInt(p.score), 0) / employeeProgress.filter(p => p.score && p.score !== '').length)
-        : 0;
+    const employees = [...new Set(enrollments.map(e => e.employeeId))];
+    return employees.map(employeeId => {
+      const employeeEnrollments = enrollments.filter(e => e.employeeId === employeeId);
+      const completed = employeeEnrollments.filter(e => e.status === 'completed').length;
+      const inProgress = employeeEnrollments.filter(e => e.status === 'in-progress').length;
+      const avgProgress = employeeEnrollments.length > 0 ? Math.round(employeeEnrollments.reduce((acc, e) => acc + e.progressPercent, 0) / employeeEnrollments.length) : 0;
       
       return {
-        email,
-        name: employeeName,
-        totalEnrollments: employeeProgress.length,
+        employeeId,
+        totalEnrollments: employeeEnrollments.length,
         completed,
         inProgress,
-        avgScore
+        avgProgress
       };
     });
   };
@@ -108,10 +108,9 @@ function Reports() {
           📊 Training Reports
         </h1>
         <p style={{ textAlign: 'center', fontSize: '1.2rem', color: '#666', marginBottom: '3rem' }}>
-          Comprehensive analytics and insights for training programs
+          Employee progress and program effectiveness analytics
         </p>
 
-        {/* Report Controls */}
         <div style={{ 
           background: 'rgba(255,255,255,0.95)', 
           borderRadius: '20px', 
@@ -119,38 +118,21 @@ function Reports() {
           boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
           marginBottom: '2rem'
         }}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <select
-                value={selectedReport}
-                onChange={(e) => setSelectedReport(e.target.value)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '10px',
-                  border: '1px solid #ddd',
-                  fontSize: '1rem'
-                }}
-              >
-                <option value="overview">📈 Overview Report</option>
-                <option value="programs">📚 Program Report</option>
-                <option value="employees">👥 Employee Report</option>
-              </select>
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '10px',
-                  border: '1px solid #ddd',
-                  fontSize: '1rem'
-                }}
-              >
-                <option value="all">All Time</option>
-                <option value="month">Last Month</option>
-                <option value="quarter">Last Quarter</option>
-                <option value="year">Last Year</option>
-              </select>
-            </div>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+            <select
+              value={selectedReport}
+              onChange={(e) => setSelectedReport(e.target.value)}
+              style={{
+                padding: '0.75rem 1rem',
+                borderRadius: '10px',
+                border: '1px solid #ddd',
+                fontSize: '1rem'
+              }}
+            >
+              <option value="overview">📈 Overview Report</option>
+              <option value="programs">📚 Program Effectiveness</option>
+              <option value="employees">👥 Employee Progress</option>
+            </select>
             <button
               onClick={exportReport}
               style={{
@@ -169,7 +151,6 @@ function Reports() {
           </div>
         </div>
 
-        {/* Overview Report */}
         {selectedReport === 'overview' && (
           <div style={{ 
             background: 'rgba(255,255,255,0.95)', 
@@ -225,7 +206,6 @@ function Reports() {
           </div>
         )}
 
-        {/* Program Report */}
         {selectedReport === 'programs' && (
           <div style={{ 
             background: 'rgba(255,255,255,0.95)', 
@@ -234,7 +214,7 @@ function Reports() {
             boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
           }}>
             <h2 style={{ color: '#333', marginBottom: '2rem', textAlign: 'center' }}>
-              📚 Program Performance Report
+              📚 Program Effectiveness Report
             </h2>
             <div style={{ display: 'grid', gap: '1rem' }}>
               {programData.map(program => (
@@ -259,16 +239,16 @@ function Reports() {
                       <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>Completed</p>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <span style={{ fontWeight: '600', color: '#f59e0b', fontSize: '1.2rem' }}>{program.inProgress}</span>
-                      <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>In Progress</p>
+                      <span style={{ fontWeight: '600', color: '#f59e0b', fontSize: '1.2rem' }}>{program.completionRate}%</span>
+                      <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>Completion Rate</p>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <span style={{ fontWeight: '600', color: '#8b5cf6', fontSize: '1.2rem' }}>{program.completionRate}%</span>
-                      <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>Completion</p>
+                      <span style={{ fontWeight: '600', color: '#8b5cf6', fontSize: '1.2rem' }}>{program.avgProgress}%</span>
+                      <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>Avg Progress</p>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <span style={{ fontWeight: '600', color: '#ef4444', fontSize: '1.2rem' }}>{program.avgScore || 'N/A'}</span>
-                      <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>Avg Score</p>
+                      <span style={{ fontWeight: '600', color: '#ef4444', fontSize: '1.2rem' }}>{program.avgRating}</span>
+                      <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>Rating ({program.feedbackCount})</p>
                     </div>
                   </div>
                 </div>
@@ -277,7 +257,6 @@ function Reports() {
           </div>
         )}
 
-        {/* Employee Report */}
         {selectedReport === 'employees' && (
           <div style={{ 
             background: 'rgba(255,255,255,0.95)', 
@@ -299,8 +278,7 @@ function Reports() {
                 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: '1rem', alignItems: 'center' }}>
                     <div>
-                      <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>{employee.name}</h4>
-                      <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>{employee.email}</p>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>{employee.employeeId}</h4>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <span style={{ fontWeight: '600', color: '#333', fontSize: '1.2rem' }}>{employee.totalEnrollments}</span>
@@ -315,8 +293,8 @@ function Reports() {
                       <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>In Progress</p>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <span style={{ fontWeight: '600', color: '#8b5cf6', fontSize: '1.2rem' }}>{employee.avgScore || 'N/A'}</span>
-                      <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>Avg Score</p>
+                      <span style={{ fontWeight: '600', color: '#8b5cf6', fontSize: '1.2rem' }}>{employee.avgProgress}%</span>
+                      <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>Avg Progress</p>
                     </div>
                   </div>
                 </div>

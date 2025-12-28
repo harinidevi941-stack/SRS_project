@@ -3,7 +3,7 @@ import { useCourseContext } from "../Context/CourseContext";
 import { useAuth } from "../Context/AuthContext";
 
 function HRDashboard() {
-  const { programs, instructors, progress, enrollments, updateProgress, isEmployeeEnrolled, createProgram, updateProgram, deleteProgram, assignInstructor } = useCourseContext();
+  const { programs, instructors, progress, enrollments, updateProgress, isEmployeeEnrolled, createProgram, updateProgram, deleteProgram, assignInstructor, getAllEnrollments, updateCertificateApproval } = useCourseContext();
   const { user } = useAuth();
   const [form, setForm] = useState({
     employeeEmail: "",
@@ -24,6 +24,12 @@ function HRDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("progress");
+
+  const allEnrollments = getAllEnrollments();
+  const completedEnrollments = allEnrollments.filter(e => e.status === 'completed');
+  const pendingApprovals = completedEnrollments.filter(e => !e.certificateApprovedByHr && e.certificateStatus !== 'denied');
+  const approvedCertificates = completedEnrollments.filter(e => e.certificateApprovedByHr);
+  const deniedCertificates = completedEnrollments.filter(e => e.certificateStatus === 'denied');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -128,6 +134,20 @@ function HRDashboard() {
             Employee Progress
           </button>
           <button
+            onClick={() => setActiveTab("certificates")}
+            style={{
+              padding: '1rem 2rem',
+              background: activeTab === "certificates" ? '#667eea' : 'transparent',
+              color: activeTab === "certificates" ? 'white' : '#667eea',
+              border: '2px solid #667eea',
+              borderRadius: '0',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            Certificate Approvals ({pendingApprovals.length})
+          </button>
+          <button
             onClick={() => setActiveTab("programs")}
             style={{
               padding: '1rem 2rem',
@@ -144,161 +164,261 @@ function HRDashboard() {
         </div>
 
         {activeTab === "progress" && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
-          {/* Add Progress Form */}
-          <div style={{ 
-            background: 'rgba(255,255,255,0.95)', 
-            borderRadius: '20px', 
-            padding: '2rem',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
-          }}>
-            <h2 style={{ color: '#333', marginBottom: '1.5rem', textAlign: 'center' }}>
-              📊 Update Employee Progress
-            </h2>
-            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem', textAlign: 'center' }}>
-              Only enrolled employees can have their progress updated
-            </p>
-            {error && (
-              <div style={{
-                background: '#fee2e2',
-                color: '#dc2626',
-                padding: '1rem',
-                borderRadius: '10px',
-                marginBottom: '1rem',
-                border: '1px solid #fecaca'
-              }}>
-                {error}
-              </div>
-            )}
-            <form onSubmit={handleSubmit}>
-              <select
-                value={form.employeeEmail}
-                onChange={e => {
-                  const selectedEnrollment = enrollments.find(enr => enr.employeeEmail === e.target.value);
-                  setForm({
-                    ...form, 
-                    employeeEmail: e.target.value,
-                    employeeName: selectedEnrollment?.employeeName || '',
-                    programId: selectedEnrollment?.programId || ''
-                  });
-                }}
-                style={{ width: '100%', padding: '1rem', margin: '0.5rem 0', borderRadius: '10px', border: '1px solid #ddd' }}
-                required
-              >
-                <option value="">Select Enrolled Employee</option>
-                {enrollments.map(enrollment => (
-                  <option key={enrollment.id} value={enrollment.employeeEmail}>
-                    {enrollment.employeeName} ({enrollment.employeeEmail}) - {enrollment.programName}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={form.status}
-                onChange={e => setForm({...form, status: e.target.value})}
-                style={{ width: '100%', padding: '1rem', margin: '0.5rem 0', borderRadius: '10px', border: '1px solid #ddd' }}
-              >
-                <option value="Not Started">Not Started</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-              </select>
-              <input
-                placeholder="Completion % (0-100)"
-                type="number"
-                min="0"
-                max="100"
-                value={form.completion}
-                onChange={e => setForm({...form, completion: e.target.value})}
-                style={{ width: '100%', padding: '1rem', margin: '0.5rem 0', borderRadius: '10px', border: '1px solid #ddd' }}
-              />
-              <input
-                placeholder="Score (optional)"
-                value={form.score}
-                onChange={e => setForm({...form, score: e.target.value})}
-                style={{ width: '100%', padding: '1rem', margin: '0.5rem 0', borderRadius: '10px', border: '1px solid #ddd' }}
-              />
-              <button
-                type="submit"
-                disabled={loading || enrollments.length === 0}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  background: enrollments.length === 0 ? '#9ca3af' : '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
-                  fontWeight: 'bold',
-                  fontSize: '1rem',
-                  cursor: enrollments.length === 0 ? 'not-allowed' : 'pointer',
-                  marginTop: '1rem'
-                }}
-              >
-                {loading ? 'Updating...' : enrollments.length === 0 ? 'No Enrolled Employees' : '✅ Update Progress'}
-              </button>
-            </form>
-            {enrollments.length === 0 && (
-              <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '1rem', textAlign: 'center' }}>
-                No employees enrolled yet. Employees must enroll first before progress can be tracked.
-              </p>
-            )}
+        <div style={{ 
+          background: 'rgba(255,255,255,0.95)', 
+          borderRadius: '20px', 
+          padding: '2rem',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+          marginBottom: '3rem'
+        }}>
+          <h2 style={{ color: '#333', marginBottom: '2rem', textAlign: 'center' }}>
+            👥 Employee Progress Overview ({allEnrollments.length} enrollments)
+          </h2>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '10px' }}>
+            <div style={{ fontWeight: '600', color: '#333' }}>Employee</div>
+            <div style={{ fontWeight: '600', color: '#333' }}>Course</div>
+            <div style={{ fontWeight: '600', color: '#333', textAlign: 'center' }}>Status</div>
+            <div style={{ fontWeight: '600', color: '#333', textAlign: 'center' }}>Progress</div>
+            <div style={{ fontWeight: '600', color: '#333', textAlign: 'center' }}>Tasks</div>
           </div>
+          
+          {allEnrollments.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#666', fontSize: '1.2rem' }}>
+              No employee enrollments yet.
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              {allEnrollments.map(enrollment => {
+                const program = programs.find(p => p.id === enrollment.courseId);
+                const completedTasks = enrollment.tasks.filter(t => t.isCompleted).length;
+                return (
+                  <div key={enrollment.id} style={{
+                    background: 'linear-gradient(145deg, #ffffff, #f8fafc)',
+                    borderRadius: '15px',
+                    padding: '1.5rem',
+                    boxShadow: '0 10px 20px rgba(0,0,0,0.05)',
+                    border: '1px solid rgba(0,0,0,0.05)',
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr',
+                    gap: '1rem',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>{enrollment.employeeId}</h4>
+                    </div>
+                    <div>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>{program?.name}</h4>
+                    </div>
+                    <span style={{
+                      padding: '0.5rem 1rem',
+                      background: enrollment.status === 'completed' ? '#10b981' : '#f59e0b',
+                      color: 'white',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
+                      fontWeight: '600',
+                      textAlign: 'center'
+                    }}>
+                      {enrollment.status}
+                    </span>
+                    <div style={{ textAlign: 'center' }}>
+                      <span style={{ fontWeight: '600', color: '#333' }}>
+                        {enrollment.progressPercent}%
+                      </span>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <span style={{ fontWeight: '600', color: '#333' }}>
+                        {completedTasks}/{enrollment.tasks.length}
+                      </span>
+                      <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.2rem' }}>
+                        {enrollment.tasks.map(task => (
+                          <div key={task.id} style={{ color: task.isCompleted ? '#10b981' : '#ef4444' }}>
+                            {task.isCompleted ? '✓' : '✗'} {task.title.substring(0, 15)}...
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      {enrollment.feedback ? (
+                        <div style={{ fontSize: '0.8rem' }}>
+                          <div style={{ color: '#f59e0b', fontWeight: '600' }}>
+                            {enrollment.feedback.rating}/5 ⭐
+                          </div>
+                          <div style={{ color: '#666', fontSize: '0.7rem' }}>
+                            {enrollment.feedback.comment?.substring(0, 30)}...
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{ color: '#999', fontSize: '0.8rem' }}>No feedback</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        )}
 
-          {/* Statistics */}
-          <div style={{ 
-            background: 'rgba(255,255,255,0.95)', 
-            borderRadius: '20px', 
-            padding: '2rem',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
-          }}>
-            <h2 style={{ color: '#333', marginBottom: '1.5rem', textAlign: 'center' }}>
-              📈 Training Statistics
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div style={{ 
-                background: 'linear-gradient(135deg, #667eea, #764ba2)', 
-                color: 'white', 
-                padding: '1.5rem', 
-                borderRadius: '15px', 
-                textAlign: 'center' 
-              }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>{progress.length}</h3>
-                <p style={{ margin: 0, fontSize: '0.9rem' }}>Total Records</p>
-              </div>
-              <div style={{ 
-                background: 'linear-gradient(135deg, #10b981, #059669)', 
-                color: 'white', 
-                padding: '1.5rem', 
-                borderRadius: '15px', 
-                textAlign: 'center' 
-              }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>
-                  {progress.filter(p => p.status === 'Completed').length}
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.9rem' }}>Completed</p>
-              </div>
-              <div style={{ 
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
-                color: 'white', 
-                padding: '1.5rem', 
-                borderRadius: '15px', 
-                textAlign: 'center' 
-              }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>
-                  {progress.filter(p => p.status === 'In Progress').length}
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.9rem' }}>In Progress</p>
-              </div>
-              <div style={{ 
-                background: 'linear-gradient(135deg, #ef4444, #dc2626)', 
-                color: 'white', 
-                padding: '1.5rem', 
-                borderRadius: '15px', 
-                textAlign: 'center' 
-              }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>
-                  {programs.length}
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.9rem' }}>Programs</p>
-              </div>
+        {activeTab === "certificates" && (
+        <div style={{ 
+          background: 'rgba(255,255,255,0.95)', 
+          borderRadius: '20px', 
+          padding: '2rem',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+          marginBottom: '3rem'
+        }}>
+          <h2 style={{ color: '#333', marginBottom: '2rem', textAlign: 'center' }}>
+            🏆 Certificate Approvals
+          </h2>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem' }}>
+            <div>
+              <h3 style={{ color: '#f59e0b', marginBottom: '1rem' }}>
+                ⏳ Pending Approvals ({pendingApprovals.length})
+              </h3>
+              {pendingApprovals.length === 0 ? (
+                <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
+                  No pending certificate approvals
+                </p>
+              ) : (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {pendingApprovals.map(enrollment => {
+                    const program = programs.find(p => p.id === enrollment.courseId);
+                    return (
+                      <div key={enrollment.id} style={{
+                        background: 'linear-gradient(145deg, #ffffff, #fef3c7)',
+                        borderRadius: '15px',
+                        padding: '1.5rem',
+                        border: '2px solid #f59e0b'
+                      }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>
+                          {enrollment.employeeId}
+                        </h4>
+                        <p style={{ margin: '0 0 1rem 0', color: '#666' }}>
+                          {program?.name}
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => updateCertificateApproval(enrollment.id, true)}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '5px',
+                              cursor: 'pointer',
+                              fontSize: '0.9rem'
+                            }}
+                          >
+                            ✅ Approve
+                          </button>
+                          <button
+                            onClick={() => updateCertificateApproval(enrollment.id, false)}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '5px',
+                              cursor: 'pointer',
+                              fontSize: '0.9rem'
+                            }}
+                          >
+                            ❌ Deny
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            
+            <div>
+              <h3 style={{ color: '#10b981', marginBottom: '1rem' }}>
+                ✅ Approved Certificates ({approvedCertificates.length})
+              </h3>
+              {approvedCertificates.length === 0 ? (
+                <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
+                  No approved certificates yet
+                </p>
+              ) : (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {approvedCertificates.map(enrollment => {
+                    const program = programs.find(p => p.id === enrollment.courseId);
+                    return (
+                      <div key={enrollment.id} style={{
+                        background: 'linear-gradient(145deg, #ffffff, #dcfce7)',
+                        borderRadius: '15px',
+                        padding: '1.5rem',
+                        border: '2px solid #10b981'
+                      }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>
+                          {enrollment.employeeId}
+                        </h4>
+                        <p style={{ margin: '0 0 1rem 0', color: '#666' }}>
+                          {program?.name}
+                        </p>
+                        <div style={{
+                          padding: '0.5rem 1rem',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '20px',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          textAlign: 'center'
+                        }}>
+                          🏆 Certificate Approved
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            
+            <div>
+              <h3 style={{ color: '#ef4444', marginBottom: '1rem' }}>
+                ❌ Denied Certificates ({deniedCertificates.length})
+              </h3>
+              {deniedCertificates.length === 0 ? (
+                <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
+                  No denied certificates
+                </p>
+              ) : (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {deniedCertificates.map(enrollment => {
+                    const program = programs.find(p => p.id === enrollment.courseId);
+                    return (
+                      <div key={enrollment.id} style={{
+                        background: 'linear-gradient(145deg, #ffffff, #fee2e2)',
+                        borderRadius: '15px',
+                        padding: '1.5rem',
+                        border: '2px solid #ef4444'
+                      }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>
+                          {enrollment.employeeId}
+                        </h4>
+                        <p style={{ margin: '0 0 1rem 0', color: '#666' }}>
+                          {program?.name}
+                        </p>
+                        <div style={{
+                          padding: '0.5rem 1rem',
+                          background: '#ef4444',
+                          color: 'white',
+                          borderRadius: '20px',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          textAlign: 'center'
+                        }}>
+                          ❌ Certificate Denied
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -472,59 +592,56 @@ function HRDashboard() {
           boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
         }}>
           <h2 style={{ color: '#333', marginBottom: '2rem', textAlign: 'center' }}>
-            👥 All Employee Progress ({progress.length} records)
+            📈 Training Statistics
           </h2>
-          
-          {progress.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#666', fontSize: '1.2rem' }}>
-              No progress records yet. Add some records above.
-            </p>
-          ) : (
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              {progress.map(record => (
-                <div key={record.id} style={{
-                  background: 'linear-gradient(145deg, #ffffff, #f8fafc)',
-                  borderRadius: '15px',
-                  padding: '1.5rem',
-                  boxShadow: '0 10px 20px rgba(0,0,0,0.05)',
-                  border: '1px solid rgba(0,0,0,0.05)',
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr',
-                  gap: '1rem',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>{record.employeeName}</h4>
-                    <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>{record.employeeEmail}</p>
-                  </div>
-                  <div>
-                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>{record.programName}</h4>
-                  </div>
-                  <span style={{
-                    padding: '0.5rem 1rem',
-                    background: getStatusColor(record.status),
-                    color: 'white',
-                    borderRadius: '20px',
-                    fontSize: '0.8rem',
-                    fontWeight: '600',
-                    textAlign: 'center'
-                  }}>
-                    {record.status}
-                  </span>
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontWeight: '600', color: '#333' }}>
-                      {record.completion || 'N/A'}%
-                    </span>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontWeight: '600', color: '#333' }}>
-                      {record.score || 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              ))}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem' }}>
+            <div style={{ 
+              background: 'linear-gradient(135deg, #667eea, #764ba2)', 
+              color: 'white', 
+              padding: '1.5rem', 
+              borderRadius: '15px', 
+              textAlign: 'center' 
+            }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>{allEnrollments.length}</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>Total Enrollments</p>
             </div>
-          )}
+            <div style={{ 
+              background: 'linear-gradient(135deg, #10b981, #059669)', 
+              color: 'white', 
+              padding: '1.5rem', 
+              borderRadius: '15px', 
+              textAlign: 'center' 
+            }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>
+                {completedEnrollments.length}
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>Completed</p>
+            </div>
+            <div style={{ 
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
+              color: 'white', 
+              padding: '1.5rem', 
+              borderRadius: '15px', 
+              textAlign: 'center' 
+            }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>
+                {allEnrollments.filter(e => e.status === 'in-progress').length}
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>In Progress</p>
+            </div>
+            <div style={{ 
+              background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', 
+              color: 'white', 
+              padding: '1.5rem', 
+              borderRadius: '15px', 
+              textAlign: 'center' 
+            }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>
+                {programs.length}
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>Programs</p>
+            </div>
+          </div>
         </div>
         )}
 

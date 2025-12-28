@@ -5,12 +5,13 @@ import { CourseProvider } from './Context/CourseContext';
 import Navbar from './Components/Navbar';
 import Home from './Components/Home';
 import Login from './Components/Login';
-import ProgressDashboard from './Components/ProgressDashboard';
 import CertificationCard from './Components/CertificationCard';
 import EmployeeDashBoard from './Components/EmployeeDashBoard';
 import HRDashboard from './Components/HRDashboard';
 import InstructorDashboard from './Components/InstructorDashboard';
 import TrainingProgramList from './Components/TrainingProgramList';
+import Course from './Components/Course';
+import EnrollmentForm from './Components/EnrollmentForm';
 import Reports from './Components/Reports';
 import Students from './Components/Students';
 import './App.css';
@@ -92,15 +93,25 @@ function AppContent() {
           } 
         />
         
-        {/* Shared Routes */}
         <Route 
-          path="/progress" 
+          path="/course/:courseId" 
           element={
-            <ProtectedRoute>
-              <ProgressDashboard />
+            <ProtectedRoute allowedRoles={['employee']}>
+              <Course />
             </ProtectedRoute>
           } 
         />
+        
+        <Route 
+          path="/enroll" 
+          element={
+            <ProtectedRoute allowedRoles={['employee']}>
+              <EnrollmentForm />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Shared Routes */}
         <Route 
           path="/programs" 
           element={

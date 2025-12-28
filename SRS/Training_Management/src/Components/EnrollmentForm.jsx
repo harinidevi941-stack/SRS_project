@@ -3,8 +3,6 @@ import { useLocation } from "react-router-dom";
 import { CourseContext } from "../Context/CourseContext";
 import { useAuth } from "../Context/AuthContext";
 
-import "./EnrollmentForm.css";
-
 function EnrollmentForm() {
   const {
     programs,
@@ -133,7 +131,7 @@ function EnrollmentForm() {
               ))}
             </select>
 
-            {error && <p className="error-text">[Error - You need to specify the message]</p>}
+            {error && <p className="error-text">{error}</p>}
             {submitError && <p className="error-text">{submitError}</p>}
             {message && <p className="success-text">{message}</p>}
             {loading && <p>Submitting enrollment...</p>}

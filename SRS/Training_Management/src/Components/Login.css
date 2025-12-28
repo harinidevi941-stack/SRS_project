@@ -1,57 +1,100 @@
-/* src/components/Login.css */
-.login-page {
+.login-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .login-card {
   background: white;
   padding: 3rem;
   border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
 }
 
-.login-card h2 {
+.login-title {
   text-align: center;
   margin-bottom: 0.5rem;
+  font-size: 2rem;
+  color: #333;
+  font-weight: 700;
 }
 
-.login-card input {
+.login-subtitle {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-input {
   width: 100%;
   padding: 1rem;
-  margin: 1rem 0;
-  border: 1px solid #ddd;
   border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
-.login-card button {
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.login-button {
   width: 100%;
-  padding: 1rem;
-  background: #667eea;
+  padding: 1.1rem;
+  margin-top: 0.5rem;
+  background: #10b981;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-weight: bold;
-}
-
-.error {
-  color: red;
-  background: #fee;
-  padding: 0.8rem;
-  border-radius: 5px;
-  margin: 1rem 0;
-}
-
-.demo-info {
-  margin-top: 2rem;
-  text-align: center;
-  background: #f8f9fa;
-  padding: 1.5rem;
   border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.login-button:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #b91c1c;
+  background: #fee2e2;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  margin: 0.8rem 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.login-hint {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-align: center;
 }
